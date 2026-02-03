@@ -286,14 +286,19 @@ def FeaturesSelection(request):
             indices = np.arange(X.shape[0])
             np.random.seed(42)  # Set seed for consistent shuffling
             np.random.shuffle(indices)
+            
+            # LIMIT DATASET TO 500 ROWS FOR RENDER (Prevent Timeout)
+            if len(indices) > 500:
+                indices = indices[:500]
+                
             X_processed = X[indices]
             Y_processed = Y[indices]
             
             # Convert numpy array to list of strings for TF-IDF
             X_text = [str(text) for text in X_processed]
             
-            # 1. Fit and Save TF-IDF (Limit features to prevent OOM on Render)
-            tfidf_vectorizer = TfidfVectorizer(stop_words=stop_words, max_features=5000)
+            # 1. Fit and Save TF-IDF (Limit features to 1000 for Speed)
+            tfidf_vectorizer = TfidfVectorizer(stop_words=stop_words, max_features=1000)
             X_processed = tfidf_vectorizer.fit_transform(X_text).toarray()
             tfidf_path = os.path.join(settings.BASE_DIR, 'model', 'tfidf.pckl')
             with open(tfidf_path, 'wb') as f:
@@ -309,8 +314,8 @@ def FeaturesSelection(request):
             with open(scaler_path, 'wb') as f:
                 pickle.dump(scaler, f)
                 
-            # 3. Fit and Save PCA
-            pca = PCA(n_components=300)
+            # 3. Fit and Save PCA (Limit components to 50 for Speed)
+            pca = PCA(n_components=50)
             X_processed = pca.fit_transform(X_processed)
             pca_path = os.path.join(settings.BASE_DIR, 'model', 'pca.pckl')
             with open(pca_path, 'wb') as f:
@@ -802,15 +807,15 @@ def RunML(request):
         
         y_train1 = to_categorical(y_train)
         y_test1 = to_categorical(y_test)
-        X_train1 = np.reshape(X_train, (X_train.shape[0], 16, 10))
-        X_test1 = np.reshape(X_test, (X_test.shape[0], 16, 10))
+        X_train1 = np.reshape(X_train, (X_train.shape[0], 16, X_train.shape[1]//16))
+        X_test1 = np.reshape(X_test, (X_test.shape[0], 16, X_test.shape[1]//16))
         lstm_model = Sequential()#defining deep learning sequential object
-        #adding LSTM layer with 100 filters to filter given input X train data to select relevant features
-        lstm_model.add(LSTM(32,input_shape=(X_train1.shape[1], X_train1.shape[2])))
+        #adding LSTM layer with 16 filters to filter given input X train data to select relevant features
+        lstm_model.add(LSTM(16,input_shape=(X_train1.shape[1], X_train1.shape[2])))
         #adding dropout layer to remove irrelevant features
         lstm_model.add(Dropout(0.3))
         #adding another layer
-        lstm_model.add(Dense(32, activation='relu'))
+        lstm_model.add(Dense(16, activation='relu'))
         #defining output layer for prediction
         lstm_model.add(Dense(y_train1.shape[1], activation='softmax'))
         #compile LSTM model
@@ -821,8 +826,8 @@ def RunML(request):
         model_weights_path = os.path.join(settings.BASE_DIR, 'model', 'lstm_weights.hdf5')
         if os.path.exists(model_weights_path) == False:
             model_check_point = ModelCheckpoint(filepath=model_weights_path, verbose = 1, save_best_only = True)
-            # Reduced epochs from 35 to 5 to prevent Render Timeout (502 Error)
-            hist = lstm_model.fit(X_train1, y_train1, batch_size = 32, epochs = 5, validation_data=(X_test1, y_test1), callbacks=[model_check_point], verbose=1)
+            # Reduced epochs to 1 for Render Speed
+            hist = lstm_model.fit(X_train1, y_train1, batch_size = 32, epochs = 1, validation_data=(X_test1, y_test1), callbacks=[model_check_point], verbose=1)
             f = open(os.path.join(settings.BASE_DIR, 'model', 'lstm_history.pckl'), 'wb')
             pickle.dump(hist.history, f)
             f.close()    
