@@ -72,6 +72,23 @@ def _init_nlp():
     """Initialize NLP tools lazily"""
     global stop_words, lemmatizer, ps
     if stop_words is None:
+        # Download NLTK data if not present (Fix for Render)
+        import nltk
+        nltk_data_dir = os.path.join(settings.BASE_DIR, 'nltk_data')
+        if not os.path.exists(nltk_data_dir):
+            os.makedirs(nltk_data_dir)
+        nltk.data.path.append(nltk_data_dir)
+        
+        try:
+            nltk.data.find('corpora/stopwords')
+        except LookupError:
+            nltk.download('stopwords', download_dir=nltk_data_dir)
+            
+        try:
+            nltk.data.find('corpora/wordnet')
+        except LookupError:
+            nltk.download('wordnet', download_dir=nltk_data_dir)
+            
         stop_words = set(stopwords.words('english'))
         lemmatizer = WordNetLemmatizer()
         ps = PorterStemmer()
@@ -804,7 +821,8 @@ def RunML(request):
         model_weights_path = os.path.join(settings.BASE_DIR, 'model', 'lstm_weights.hdf5')
         if os.path.exists(model_weights_path) == False:
             model_check_point = ModelCheckpoint(filepath=model_weights_path, verbose = 1, save_best_only = True)
-            hist = lstm_model.fit(X_train1, y_train1, batch_size = 32, epochs = 35, validation_data=(X_test1, y_test1), callbacks=[model_check_point], verbose=1)
+            # Reduced epochs from 35 to 5 to prevent Render Timeout (502 Error)
+            hist = lstm_model.fit(X_train1, y_train1, batch_size = 32, epochs = 5, validation_data=(X_test1, y_test1), callbacks=[model_check_point], verbose=1)
             f = open(os.path.join(settings.BASE_DIR, 'model', 'lstm_history.pckl'), 'wb')
             pickle.dump(hist.history, f)
             f.close()    
