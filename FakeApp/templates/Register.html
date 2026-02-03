@@ -1,0 +1,159 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Register - Fake News Detection</title>
+	<link href="{% static 'modern.css' %}" rel="stylesheet">
+	<script>
+		function validate(formObj) {
+			if (formObj.t1.value.length == 0) {
+				alert("Please enter username");
+				formObj.t1.focus();
+				return false;
+			}
+			if (formObj.t2.value.length == 0) {
+				alert("Please enter password");
+				formObj.t2.focus();
+				return false;
+			}
+			if (formObj.t3.value.length == 0) {
+				alert("Please enter contact number");
+				formObj.t3.focus();
+				return false;
+			}
+			if (isNaN(formObj.t3.value)) {
+				alert("Contact number must be numeric");
+				formObj.t3.focus();
+				return false;
+			}
+			if (formObj.t4.value.length == 0) {
+				alert("Please enter email");
+				formObj.t4.focus();
+				return false;
+			}
+			var filter = /^([a-zA-Z0-9_\.\-])+\@([a-z]+\.)+(com)+$/;
+			if (!filter.test(formObj.t4.value)) {
+				alert('Please enter a valid email address');
+				formObj.t4.focus();
+				return false;
+			}
+			if (formObj.t5.value.length == 0) {
+				alert("Please enter address");
+				formObj.t5.focus();
+				return false;
+			}
+			return true;
+		}
+	</script>
+</head>
+
+<body>
+	<!-- Header -->
+	<header class="header">
+		<div class="header-content">
+			<div class="logo">
+				<div class="logo-icon">🔍</div>
+				<div>
+					<div class="logo-text">Fakenews Detection</div>
+					<div class="logo-subtitle">Using Optimized MSVM Classification</div>
+				</div>
+			</div>
+			<nav class="nav">
+				<a href="{% url 'index' %}" class="nav-link">Home</a>
+				<a href="{% url 'UserLogin' %}" class="nav-link">Login</a>
+				<a href="{% url 'Register' %}" class="nav-link active">Register</a>
+				<button class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Mode">
+					<span class="icon-sun">☀️</span>
+					<span class="icon-moon">🌙</span>
+				</button>
+			</nav>
+		</div>
+	</header>
+
+	<!-- Main Content -->
+	<main class="main-container fade-in">
+		<div style="max-width: 500px; margin: 2rem auto;">
+			<div class="card">
+				<h2 class="card-title">
+					<span class="card-title-icon">📝</span>
+					Create Account
+				</h2>
+
+				{% if data %}
+				<div class="alert {% if 'completed' in data %}alert-success{% else %}alert-danger{% endif %}">
+					{% if 'completed' in data %}✅{% else %}⚠️{% endif %} {{ data|safe }}
+				</div>
+				{% endif %}
+
+				<form name="f1" method="post" action="{% url 'RegisterAction' %}" onsubmit="return validate(this)">
+					{% csrf_token %}
+
+					<div class="form-group">
+						<label class="form-label">Username</label>
+						<input type="text" name="t1" class="form-input" placeholder="Choose a username">
+					</div>
+
+					<div class="form-group">
+						<label class="form-label">Password</label>
+						<input type="password" name="t2" class="form-input" placeholder="Create a password">
+					</div>
+
+					<div class="form-group">
+						<label class="form-label">Contact Number</label>
+						<input type="text" name="t3" class="form-input" placeholder="Enter your phone number">
+					</div>
+
+					<div class="form-group">
+						<label class="form-label">Email Address</label>
+						<input type="text" name="t4" class="form-input" placeholder="Enter your email">
+					</div>
+
+					<div class="form-group">
+						<label class="form-label">Address</label>
+						<input type="text" name="t5" class="form-input" placeholder="Enter your address">
+					</div>
+
+					<button type="submit" class="btn btn-primary" style="width: 100%;">
+						✨ Create Account
+					</button>
+				</form>
+
+				<p style="text-align: center; margin-top: 1.5rem; color: var(--text-secondary);">
+					Already have an account?
+					<a href="{% url 'UserLogin' %}"
+						style="color: var(--primary); text-decoration: none; font-weight: 600;">Login here</a>
+				</p>
+			</div>
+		</div>
+	</main>
+
+	<!-- Footer -->
+	<footer class="footer">
+		<p>© 2026 Fake News Detection System | Powered by Firefly-MSVM Algorithm</p>
+	</footer>
+	<!-- Theme Toggle Script -->
+	<script>
+		(function () {
+			const savedTheme = localStorage.getItem('theme');
+			const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			const initialTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+			document.documentElement.setAttribute('data-theme', initialTheme);
+			document.addEventListener('DOMContentLoaded', function () {
+				const themeToggle = document.getElementById('themeToggle');
+				if (themeToggle) {
+					themeToggle.addEventListener('click', function () {
+						const currentTheme = document.documentElement.getAttribute('data-theme');
+						const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+						document.documentElement.setAttribute('data-theme', newTheme);
+						localStorage.setItem('theme', newTheme);
+					});
+				}
+			});
+		})();
+	</script>
+</body>
+
+</html>

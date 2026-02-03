@@ -1,0 +1,210 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Predict News - Fake News Detection</title>
+	<link href="{% static 'modern.css' %}" rel="stylesheet">
+	<script>
+		function validate(formObj) {
+			if (formObj.t1.value.length == 0) {
+				alert("Please input news text");
+				formObj.t1.focus();
+				return false;
+			}
+			return true;
+		}
+
+		function validate1(formObj) {
+			if (formObj.t2.value.length == 0) {
+				alert("Please upload a news file");
+				formObj.t2.focus();
+				return false;
+			}
+			return true;
+		}
+	</script>
+	<style>
+		.prediction-result {
+			padding: 2rem;
+			border-radius: 16px;
+			text-align: center;
+			margin: 1.5rem 0;
+			animation: fadeIn 0.5s ease;
+		}
+
+		.prediction-fake {
+			background: linear-gradient(135deg, rgba(239, 68, 68, 0.2) 0%, rgba(185, 28, 28, 0.2) 100%);
+			border: 2px solid #ef4444;
+		}
+
+		.prediction-true {
+			background: linear-gradient(135deg, rgba(16, 185, 129, 0.2) 0%, rgba(5, 150, 105, 0.2) 100%);
+			border: 2px solid #10b981;
+		}
+
+		.file-label {
+			display: block;
+			border: 2px dashed var(--border);
+			border-radius: 12px;
+			padding: 2rem;
+			text-align: center;
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
+
+		.file-label:hover {
+			border-color: var(--primary);
+			background: rgba(99, 102, 241, 0.05);
+		}
+
+		.file-label input {
+			display: none;
+		}
+
+		.divider {
+			display: flex;
+			align-items: center;
+			text-align: center;
+			margin: 2rem 0;
+			color: var(--text-secondary);
+		}
+
+		.divider::before,
+		.divider::after {
+			content: '';
+			flex: 1;
+			border-bottom: 1px solid var(--border);
+		}
+
+		.divider span {
+			padding: 0 1rem;
+			font-weight: 500;
+		}
+	</style>
+</head>
+
+<body>
+	<!-- Header -->
+	<header class="header">
+		<div class="header-content">
+			<div class="logo">
+				<div class="logo-icon">🔍</div>
+				<div>
+					<div class="logo-text">Fakenews Detection</div>
+					<div class="logo-subtitle">Using Optimized MSVM Classification</div>
+				</div>
+			</div>
+			<nav class="nav">
+				<a href="{% url 'LoadDataset' %}" class="nav-link">📊 Load Dataset</a>
+				<a href="{% url 'FeaturesSelection' %}" class="nav-link">🔬 Feature Selection</a>
+				<a href="{% url 'RunML' %}" class="nav-link">🤖 Run MSVM</a>
+				<a href="{% url 'Predict' %}" class="nav-link active">🔮 Predict</a>
+				<a href="{% url 'index' %}" class="nav-link btn-primary">🚪 Logout</a>
+			</nav>
+		</div>
+	</header>
+
+	<!-- Main Content -->
+	<main class="main-container fade-in">
+		<div class="card">
+			<h2 class="card-title">
+				<span class="card-title-icon">🔮</span>
+				Fake News Detection
+			</h2>
+			<p style="color: var(--text-secondary); margin-bottom: 2rem;">
+				Enter a news article or claim to check if it's true or fake using our Firefly-MSVM algorithm.
+			</p>
+
+			<!-- Text Input Form -->
+			<form name="f1" method="post" action="{% url 'PredictAction' %}" onsubmit="return validate(this)">
+				{% csrf_token %}
+
+				<div class="form-group">
+					<label class="form-label">📰 Enter News Text</label>
+					<textarea name="t1" class="form-input" placeholder="Paste your news article or claim here to verify its authenticity...
+
+Example: COVID-19 vaccines contain microchips that track your location."></textarea>
+				</div>
+
+				<button type="submit" class="btn btn-primary">
+					🔍 Analyze News
+				</button>
+			</form>
+
+			<!-- Divider -->
+			<div class="divider">
+				<span>OR</span>
+			</div>
+
+			<!-- File Upload Form -->
+			<form name="f2" method="post" action="{% url 'PredictFileAction' %}" enctype="multipart/form-data"
+				onsubmit="return validate1(this)">
+				{% csrf_token %}
+
+				<div class="form-group">
+					<label class="form-label">📁 Upload CSV File</label>
+					<label class="file-label" id="fileLabel">
+						<input type="file" name="t2" id="fileInput" accept=".csv" onchange="updateFileName()">
+						<div style="font-size: 2.5rem; margin-bottom: 0.5rem;">📄</div>
+						<div style="font-weight: 600; margin-bottom: 0.25rem;" id="fileName">Click to upload CSV file
+						</div>
+						<div style="color: var(--text-secondary); font-size: 0.9rem;">Supports CSV with news articles
+						</div>
+					</label>
+				</div>
+
+				<button type="submit" class="btn btn-secondary">
+					📤 Upload & Analyze
+				</button>
+			</form>
+		</div>
+
+		<!-- Result Section -->
+		{% if data %}
+		<div class="card">
+			<h2 class="card-title">
+				<span class="card-title-icon">📋</span>
+				Prediction Result
+			</h2>
+			<div
+				style="font-size: 1.25rem; padding: 1.5rem; background: var(--dark); border-radius: 12px; text-align: center;">
+				{{ data|safe }}
+			</div>
+		</div>
+		{% endif %}
+
+		<!-- Tips Card -->
+		<div class="card" style="border-color: rgba(99, 102, 241, 0.3);">
+			<h2 class="card-title">
+				<span class="card-title-icon">💡</span>
+				Tips for Best Results
+			</h2>
+			<ul style="color: var(--text-secondary); line-height: 2; padding-left: 1.5rem;">
+				<li>Enter complete news claims, not just headlines</li>
+				<li>The model works best with political claims and health misinformation</li>
+				<li>Avoid very short texts (less than 20 words)</li>
+				<li>For CSV upload, ensure your file has a "News" column</li>
+			</ul>
+		</div>
+	</main>
+
+	<!-- Footer -->
+	<footer class="footer">
+		<p>© 2026 Fake News Detection System | Powered by Firefly-MSVM Algorithm</p>
+	</footer>
+
+	<script>
+		function updateFileName() {
+			var input = document.getElementById('fileInput');
+			var label = document.getElementById('fileName');
+			if (input.files.length > 0) {
+				label.textContent = input.files[0].name;
+			}
+		}
+	</script>
+</body>
+
+</html>

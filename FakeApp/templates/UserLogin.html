@@ -1,0 +1,118 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Login - Fake News Detection</title>
+	<link href="{% static 'modern.css' %}" rel="stylesheet">
+	<script>
+		function validate(formObj) {
+			if (formObj.t1.value.length == 0) {
+				alert("Please enter username");
+				formObj.t1.focus();
+				return false;
+			}
+			if (formObj.t2.value.length == 0) {
+				alert("Please enter password");
+				formObj.t2.focus();
+				return false;
+			}
+			return true;
+		}
+	</script>
+</head>
+
+<body>
+	<!-- Header -->
+	<header class="header">
+		<div class="header-content">
+			<div class="logo">
+				<div class="logo-icon">🔍</div>
+				<div>
+					<div class="logo-text">Fakenews Detection</div>
+					<div class="logo-subtitle">Using Optimized MSVM Classification</div>
+				</div>
+			</div>
+			<nav class="nav">
+				<a href="{% url 'index' %}" class="nav-link">Home</a>
+				<a href="{% url 'UserLogin' %}" class="nav-link active">Login</a>
+				<a href="{% url 'Register' %}" class="nav-link">Register</a>
+				<button class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Mode">
+					<span class="icon-sun">☀️</span>
+					<span class="icon-moon">🌙</span>
+				</button>
+			</nav>
+		</div>
+	</header>
+
+	<!-- Main Content -->
+	<main class="main-container fade-in">
+		<div style="max-width: 450px; margin: 2rem auto;">
+			<div class="card">
+				<h2 class="card-title">
+					<span class="card-title-icon">🔐</span>
+					User Login
+				</h2>
+
+				{% if data %}
+				<div class="alert alert-danger">
+					⚠️ {{ data|safe }}
+				</div>
+				{% endif %}
+
+				<form name="f1" method="post" action="{% url 'UserLoginAction' %}" onsubmit="return validate(this)">
+					{% csrf_token %}
+
+					<div class="form-group">
+						<label class="form-label">Username</label>
+						<input type="text" name="t1" class="form-input" placeholder="Enter your username">
+					</div>
+
+					<div class="form-group">
+						<label class="form-label">Password</label>
+						<input type="password" name="t2" class="form-input" placeholder="Enter your password">
+					</div>
+
+					<button type="submit" class="btn btn-primary" style="width: 100%;">
+						🚀 Login
+					</button>
+				</form>
+
+				<p style="text-align: center; margin-top: 1.5rem; color: var(--text-secondary);">
+					Don't have an account?
+					<a href="{% url 'Register' %}"
+						style="color: var(--primary); text-decoration: none; font-weight: 600;">Register here</a>
+				</p>
+			</div>
+		</div>
+	</main>
+
+	<!-- Footer -->
+	<footer class="footer">
+		<p>© 2026 Fake News Detection System | Powered by Firefly-MSVM Algorithm</p>
+	</footer>
+	<!-- Theme Toggle Script -->
+	<script>
+		(function () {
+			const savedTheme = localStorage.getItem('theme');
+			const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+			const initialTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+			document.documentElement.setAttribute('data-theme', initialTheme);
+			document.addEventListener('DOMContentLoaded', function () {
+				const themeToggle = document.getElementById('themeToggle');
+				if (themeToggle) {
+					themeToggle.addEventListener('click', function () {
+						const currentTheme = document.documentElement.getAttribute('data-theme');
+						const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+						document.documentElement.setAttribute('data-theme', newTheme);
+						localStorage.setItem('theme', newTheme);
+					});
+				}
+			});
+		})();
+	</script>
+</body>
+
+</html>

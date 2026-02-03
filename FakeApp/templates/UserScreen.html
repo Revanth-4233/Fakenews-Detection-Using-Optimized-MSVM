@@ -1,0 +1,147 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="UTF-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+	<title>Dashboard - Fake News Detection</title>
+	<link href="{% static 'modern.css' %}" rel="stylesheet">
+	<style>
+		.output-container {
+			background: var(--dark);
+			border-radius: 12px;
+			padding: 1.5rem;
+			margin: 1.5rem 0;
+			overflow-x: auto;
+		}
+
+		.output-container table {
+			width: 100%;
+			border-collapse: collapse;
+		}
+
+		.output-container th {
+			background: var(--dark-lighter);
+			color: var(--text-secondary);
+			padding: 1rem;
+			text-align: left;
+			font-weight: 600;
+			font-size: 0.85rem;
+			text-transform: uppercase;
+			border-bottom: 1px solid var(--border);
+		}
+
+		.output-container td {
+			padding: 1rem;
+			border-bottom: 1px solid var(--border);
+			color: var(--text-primary);
+		}
+
+		.output-container tr:hover {
+			background: rgba(99, 102, 241, 0.05);
+		}
+
+		.prediction-fake {
+			color: #ef4444 !important;
+			font-weight: 600;
+		}
+
+		.prediction-true {
+			color: #10b981 !important;
+			font-weight: 600;
+		}
+	</style>
+</head>
+
+<body>
+	<!-- Header -->
+	<header class="header">
+		<div class="header-content">
+			<div class="logo">
+				<div class="logo-icon">🔍</div>
+				<div>
+					<div class="logo-text">Fakenews Detection</div>
+					<div class="logo-subtitle">Using Optimized MSVM Classification</div>
+				</div>
+			</div>
+			<nav class="nav">
+				<a href="{% url 'LoadDataset' %}" class="nav-link">📊 Load Dataset</a>
+				<a href="{% url 'FeaturesSelection' %}" class="nav-link">🔬 Feature Selection</a>
+				<a href="{% url 'RunML' %}" class="nav-link">🤖 Run MSVM</a>
+				<a href="{% url 'Predict' %}" class="nav-link">🔮 Predict</a>
+				<a href="{% url 'index' %}" class="nav-link btn-primary">🚪 Logout</a>
+			</nav>
+		</div>
+	</header>
+
+	<!-- Main Content -->
+	<main class="main-container fade-in">
+		<!-- Welcome Card -->
+		<div class="card">
+			<h2 class="card-title">
+				<span class="card-title-icon">🎯</span>
+				Dashboard
+			</h2>
+
+			<!-- Quick Actions -->
+			<div class="feature-grid" style="margin-bottom: 2rem;">
+				<a href="{% url 'LoadDataset' %}" class="feature-card" style="text-decoration: none; color: inherit;">
+					<div class="feature-icon">📊</div>
+					<h3 class="feature-title">Load Dataset</h3>
+					<p class="feature-desc">View PolitiFact fake news dataset</p>
+				</a>
+				<a href="{% url 'FeaturesSelection' %}" class="feature-card"
+					style="text-decoration: none; color: inherit;">
+					<div class="feature-icon">🔬</div>
+					<h3 class="feature-title">Feature Selection</h3>
+					<p class="feature-desc">Run MPCA & Firefly optimization</p>
+				</a>
+				<a href="{% url 'RunML' %}" class="feature-card" style="text-decoration: none; color: inherit;">
+					<div class="feature-icon">🤖</div>
+					<h3 class="feature-title">Train Models</h3>
+					<p class="feature-desc">Run MSVM & LSTM algorithms</p>
+				</a>
+				<a href="{% url 'Predict' %}" class="feature-card" style="text-decoration: none; color: inherit;">
+					<div class="feature-icon">🔮</div>
+					<h3 class="feature-title">Predict News</h3>
+					<p class="feature-desc">Classify news as True or Fake</p>
+				</a>
+			</div>
+		</div>
+
+		<!-- Output Section -->
+		{% if data %}
+		<div class="card">
+			<h2 class="card-title">
+				<span class="card-title-icon">📋</span>
+				Results
+			</h2>
+			<div class="output-container">
+				{{ data|safe }}
+			</div>
+		</div>
+		{% endif %}
+
+		<!-- Chart/Graph Section -->
+		{% if img %}
+		<div class="card">
+			<h2 class="card-title">
+				<span class="card-title-icon">📈</span>
+				Performance Visualization
+			</h2>
+			<div class="chart-container" style="text-align: center;">
+				<img src="data:image/png;base64, {{ img }}" alt="Performance Graph"
+					style="max-width: 100%; border-radius: 8px;">
+			</div>
+		</div>
+		{% endif %}
+	</main>
+
+	<!-- Footer -->
+	<footer class="footer">
+		<p>© 2026 Fake News Detection System | Powered by Firefly-MSVM Algorithm</p>
+	</footer>
+</body>
+
+</html>

@@ -1,0 +1,134 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fake News Detection System</title>
+    <link href="{% static 'modern.css' %}" rel="stylesheet">
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <div class="logo-icon">🔍</div>
+                <div>
+                    <div class="logo-text">Fakenews Detection</div>
+                    <div class="logo-subtitle">Using Optimized MSVM Classification</div>
+                </div>
+            </div>
+            <nav class="nav">
+                <a href="{% url 'index' %}" class="nav-link active">Home</a>
+                <a href="{% url 'UserLogin' %}" class="nav-link btn-primary">Login</a>
+                <a href="{% url 'Register' %}" class="nav-link">Register</a>
+                <button class="theme-toggle" id="themeToggle" title="Toggle Light/Dark Mode">
+                    <span class="icon-sun">☀️</span>
+                    <span class="icon-moon">🌙</span>
+                </button>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="main-container fade-in">
+        <!-- Hero Section -->
+        <section class="hero">
+            <div class="hero-icon">🛡️</div>
+            <h1 class="hero-title">Fake News Detection System</h1>
+            <p class="hero-subtitle">
+                Using Feature-Based Optimized Multi-class SVM with Firefly Algorithm
+                for accurate classification of news articles
+            </p>
+            <a href="{% url 'UserLogin' %}" class="btn btn-primary">
+                🚀 Get Started
+            </a>
+        </section>
+
+        <!-- Features Grid -->
+        <div class="feature-grid">
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3 class="feature-title">TF-IDF Vectorization</h3>
+                <p class="feature-desc">Advanced text feature extraction using Term Frequency-Inverse Document Frequency
+                </p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔬</div>
+                <h3 class="feature-title">PCA Reduction</h3>
+                <p class="feature-desc">Dimensionality reduction to 300 principal components for optimal performance</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🔥</div>
+                <h3 class="feature-title">Firefly Optimization</h3>
+                <p class="feature-desc">Bio-inspired algorithm for intelligent feature selection</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">🤖</div>
+                <h3 class="feature-title">MSVM Classification</h3>
+                <p class="feature-desc">Multi-class Support Vector Machine for accurate prediction</p>
+            </div>
+        </div>
+
+        <!-- Stats Section -->
+        <div class="card">
+            <h2 class="card-title">
+                <span class="card-title-icon">📈</span>
+                System Performance
+            </h2>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-value">85%+</div>
+                    <div class="stat-label">Accuracy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2,400+</div>
+                    <div class="stat-label">Training Articles</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">300</div>
+                    <div class="stat-label">PCA Features</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value">2</div>
+                    <div class="stat-label">ML Models</div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <p>© 2026 Fake News Detection System | Powered by Firefly-MSVM Algorithm</p>
+    </footer>
+    <!-- Theme Toggle Script -->
+    <script>
+        (function () {
+            // Check for saved theme preference or use system preference
+            const savedTheme = localStorage.getItem('theme');
+            const systemPrefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            const initialTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+
+            // Apply initial theme
+            document.documentElement.setAttribute('data-theme', initialTheme);
+
+            // Theme toggle functionality
+            document.addEventListener('DOMContentLoaded', function () {
+                const themeToggle = document.getElementById('themeToggle');
+                if (themeToggle) {
+                    themeToggle.addEventListener('click', function () {
+                        const currentTheme = document.documentElement.getAttribute('data-theme');
+                        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+
+                        document.documentElement.setAttribute('data-theme', newTheme);
+                        localStorage.setItem('theme', newTheme);
+                    });
+                }
+            });
+        })();
+    </script>
+</body>
+
+</html>
