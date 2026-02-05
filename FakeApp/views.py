@@ -24,7 +24,7 @@ import nltk
 from string import punctuation
 from nltk.stem import WordNetLemmatizer
 from nltk.stem import PorterStemmer
-from FireflyMSVM import FireflyMSVM
+# FireflyMSVM is defined locally below for speed (removed slow external import)
 from sklearn import svm
 # Keras imports removed to save memory on Render (Unused)
 # from keras.utils.np_utils import to_categorical
@@ -261,7 +261,6 @@ def calculateMetrics(algorithm, y_test, predict):
     f = round(f, 3)
     accuracy.append(a)
     precision.append(p)
-    recall.append(r)
     recall.append(r)
     fscore.append(f)
     return algorithm
