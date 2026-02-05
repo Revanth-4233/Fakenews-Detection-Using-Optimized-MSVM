@@ -813,72 +813,31 @@ def RunML(request):
                 pickle.dump(svm_cls, f)
         
         predict = svm_cls.predict(X_test)
-        calculateMetrics("Propose MSVM", y_test, predict)
-        print(accuracy)
+        calculateMetrics("Optimized MSVM", y_test, predict)
         conf_matrix = confusion_matrix(y_test, predict)
         
-        # Lazy import Keras to avoid memory overhead on startup
-        from keras.utils.np_utils import to_categorical
-        from keras.models import Sequential
-        from keras.layers import Dense, Dropout, LSTM
-        from keras.callbacks import ModelCheckpoint
-        
-        y_train1 = to_categorical(y_train)
-        y_test1 = to_categorical(y_test)
-        X_train1 = np.reshape(X_train, (X_train.shape[0], 16, X_train.shape[1]//16))
-        X_test1 = np.reshape(X_test, (X_test.shape[0], 16, X_test.shape[1]//16))
-        lstm_model = Sequential()#defining deep learning sequential object
-        #adding LSTM layer with 16 filters to filter given input X train data to select relevant features
-        lstm_model.add(LSTM(16,input_shape=(X_train1.shape[1], X_train1.shape[2])))
-        #adding dropout layer to remove irrelevant features
-        lstm_model.add(Dropout(0.3))
-        #adding another layer
-        lstm_model.add(Dense(16, activation='relu'))
-        #defining output layer for prediction
-        lstm_model.add(Dense(y_train1.shape[1], activation='softmax'))
-        #compile LSTM model
-        lstm_model.compile(loss='categorical_crossentropy', optimizer='adam', metrics=['accuracy'])
-        #start training model on train data and perform validation on test data
-        #train and load the model
-        #train and load the model
-        model_weights_path = os.path.join(settings.BASE_DIR, 'model', 'lstm_weights.hdf5')
-        if os.path.exists(model_weights_path) == False:
-            model_check_point = ModelCheckpoint(filepath=model_weights_path, verbose = 1, save_best_only = True)
-            # Reduced epochs to 1 for Render Speed
-            hist = lstm_model.fit(X_train1, y_train1, batch_size = 32, epochs = 1, validation_data=(X_test1, y_test1), callbacks=[model_check_point], verbose=1)
-            f = open(os.path.join(settings.BASE_DIR, 'model', 'lstm_history.pckl'), 'wb')
-            pickle.dump(hist.history, f)
-            f.close()    
-        else:
-            lstm_model.load_weights(model_weights_path)
-        #perform prediction on test data    
-        predict = lstm_model.predict(X_test1)
-        predict = np.argmax(predict, axis=1)
-        y_test1 = np.argmax(y_test1, axis=1)
-        calculateMetrics("Existing LSTM", y_test, predict)
-        print(accuracy)
+        # Display results
         output='<table border=1 align=center width=100%><tr><th><font size="" color="black">Algorithm Name</th><th><font size="" color="black">Accuracy</th>'
         output += '<th><font size="" color="black">Precision</th><th><font size="" color="black">Recall</th><th><font size="" color="black">FSCORE</th>'
         output+='</tr>'
-        algorithms = ['Propose MSVM', 'Existing LSTM']
+        algorithms = ['Optimized MSVM']
         for i in range(len(algorithms)):
             output += '<td><font size="" color="black">'+algorithms[i]+'</td><td><font size="" color="black">'+str(accuracy[i])+'</td><td><font size="" color="black">'+str(precision[i])+'</td>'
             output += '<td><font size="" color="black">'+str(recall[i])+'</td><td><font size="" color="black">'+str(fscore[i])+'</td></tr>'
         output+= "</table></br>"
-        df = pd.DataFrame([[' MSProposeVM','Accuracy',accuracy[0]],['Propose MSVM','Precision',precision[0]],['Propose MSVM','Recall',recall[0]],['Propose MSVM','FSCORE',fscore[0]],
-                           ['LSTM','Accuracy',accuracy[1]],['LSTM','Precision',precision[1]],['LSTM','Recall',recall[1]],['LSTM','FSCORE',fscore[1]],
+        
+        df = pd.DataFrame([['Optimized MSVM','Accuracy',accuracy[0]],['Optimized MSVM','Precision',precision[0]],['Optimized MSVM','Recall',recall[0]],['Optimized MSVM','FSCORE',fscore[0]],
                           ],columns=['Parameters','Algorithms','Value'])
 
-        figure, axis = plt.subplots(nrows=1, ncols=2,figsize=(10, 3))#display original and predicted segmented image
+        figure, axis = plt.subplots(nrows=1, ncols=2,figsize=(10, 3))
         axis[0].set_title("Confusion Matrix Prediction Graph")
-        axis[1].set_title("All Algorithms Performance Graph")
+        axis[1].set_title("Optimized MSVM Performance Graph")
         ax = sns.heatmap(conf_matrix, xticklabels = class_label, yticklabels = class_label, annot = True, cmap="viridis" ,fmt ="g", ax=axis[0]);
         ax.set_ylim([0,len(class_label)])    
         df.pivot("Parameters", "Algorithms", "Value").plot(ax=axis[1], kind='bar')
-        plt.title("All Algorithms Performance Graph")
+        plt.title("Optimized MSVM Performance Graph")
         buf = io.BytesIO()
         plt.savefig(buf, format='png', bbox_inches='tight')
-        #plt.close()
         img_b64 = base64.b64encode(buf.getvalue()).decode()
         plt.clf()
         plt.cla()
