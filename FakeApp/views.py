@@ -69,30 +69,46 @@ labels = None
 news = None
 
 def _init_nlp():
-    """Initialize NLP tools lazily"""
+    """Initialize NLP tools lazily with robust error handling"""
     global stop_words, lemmatizer, ps
     if stop_words is None:
-        # Download NLTK data if not present (Fix for Render)
         import nltk
+        import shutil
+        from zipfile import BadZipFile
+        
+        # Use project-local NLTK data directory
         nltk_data_dir = os.path.join(settings.BASE_DIR, 'nltk_data')
         if not os.path.exists(nltk_data_dir):
             os.makedirs(nltk_data_dir)
-        nltk.data.path.append(nltk_data_dir)
         
-        try:
-            nltk.data.find('corpora/stopwords')
-        except LookupError:
-            nltk.download('stopwords', download_dir=nltk_data_dir)
-            
-        try:
-            nltk.data.find('corpora/wordnet')
-        except LookupError:
-            nltk.download('wordnet', download_dir=nltk_data_dir)
-            
+        # Prepend our directory to ensure it's checked first
+        if nltk_data_dir not in nltk.data.path:
+            nltk.data.path.insert(0, nltk_data_dir)
+        
+        # Function to safely download NLTK data
+        def safe_download(package_name, subdir='corpora'):
+            try:
+                nltk.data.find(f'{subdir}/{package_name}')
+            except (LookupError, BadZipFile, Exception) as e:
+                # Delete corrupted data if exists
+                corrupted_path = os.path.join(nltk_data_dir, subdir, package_name)
+                if os.path.exists(corrupted_path):
+                    shutil.rmtree(corrupted_path, ignore_errors=True)
+                # Also delete zip file if exists
+                zip_path = os.path.join(nltk_data_dir, subdir, f'{package_name}.zip')
+                if os.path.exists(zip_path):
+                    os.remove(zip_path)
+                # Re-download
+                nltk.download(package_name, download_dir=nltk_data_dir, quiet=True)
+        
+        safe_download('stopwords')
+        safe_download('wordnet')
+        
         stop_words = set(stopwords.words('english'))
         lemmatizer = WordNetLemmatizer()
         ps = PorterStemmer()
     return stop_words, lemmatizer, ps
+
 
 def _load_dataset_lazy():
     """Load dataset only when needed"""
