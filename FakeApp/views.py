@@ -660,12 +660,14 @@ def PredictAction(request):
         
         # Get decision function scores for multi-class classification
         try:
-            decision_score = svm_cls.decision_function(data)[0]
+            raw_decision_score = svm_cls.decision_function(data)[0]
+            # Apply bias correction - model tends to predict negative, so shift scores up
+            # This compensates for model's inherent bias towards "fake" predictions
+            decision_score = raw_decision_score + 1.0
         except:
             decision_score = -0.5 if predict == 0 else 0.5
         
         # Define 5 multi-class categories based on decision score
-        # Score ranges: < -1.5, -1.5 to -0.5, -0.5 to 0.5, 0.5 to 1.5, > 1.5
         categories = [
             {"name": "Pants on Fire", "icon": "🔥", "color": "#991b1b", "bg": "#fef2f2", "border": "#fecaca", "desc": "Completely False - Major misinformation detected"},
             {"name": "False", "icon": "❌", "color": "#dc2626", "bg": "#fef2f2", "border": "#fecaca", "desc": "False - Contains significant inaccuracies"},
@@ -674,15 +676,15 @@ def PredictAction(request):
             {"name": "True", "icon": "✅", "color": "#047857", "bg": "#f0fdf4", "border": "#bbf7d0", "desc": "True - Accurate and verified information"},
         ]
         
-        # Determine category based on decision score
-        # Adjusted thresholds for more balanced predictions
-        if decision_score < -0.8:
+        # Determine category based on corrected decision score
+        # Thresholds adjusted for balanced predictions after bias correction
+        if decision_score < -0.5:
             selected_cat = 0  # Pants on Fire
-        elif decision_score < -0.2:
+        elif decision_score < 0.0:
             selected_cat = 1  # False
-        elif decision_score < 0.2:
+        elif decision_score < 0.5:
             selected_cat = 2  # Half True
-        elif decision_score < 0.6:
+        elif decision_score < 1.0:
             selected_cat = 3  # Mostly True
         else:
             selected_cat = 4  # True
@@ -707,16 +709,18 @@ def PredictAction(request):
                         sent_data = scaler.transform(sent_data)
                         sent_data = pca.transform(sent_data)
                         sent_data = sent_data[:, selected_features]
-                        sent_score = svm_cls.decision_function(sent_data)[0]
+                        raw_sent_score = svm_cls.decision_function(sent_data)[0]
+                        # Apply same bias correction as main prediction
+                        sent_score = raw_sent_score + 1.0
                         
-                        # Determine sentence status (adjusted thresholds)
-                        if sent_score < -0.3:
+                        # Determine sentence status (with bias correction applied)
+                        if sent_score < 0.0:
                             status_icon = "🔴"
                             status_text = "Likely False"
                             bg_color = "#fef2f2"
                             border_color = "#fecaca"
                             text_color = "#dc2626"
-                        elif sent_score < 0.1:
+                        elif sent_score < 0.6:
                             status_icon = "🟡"
                             status_text = "Uncertain"
                             bg_color = "#fffbeb"
