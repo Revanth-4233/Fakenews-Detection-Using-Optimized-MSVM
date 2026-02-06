@@ -73,40 +73,71 @@ def _init_nlp():
     global stop_words, lemmatizer, ps
     if stop_words is None:
         import nltk
-        import shutil
-        from zipfile import BadZipFile
+        import time
         
         # Use project-local NLTK data directory
         nltk_data_dir = os.path.join(settings.BASE_DIR, 'nltk_data')
         if not os.path.exists(nltk_data_dir):
-            os.makedirs(nltk_data_dir)
+            os.makedirs(nltk_data_dir, exist_ok=True)
         
         # Prepend our directory to ensure it's checked first
         if nltk_data_dir not in nltk.data.path:
             nltk.data.path.insert(0, nltk_data_dir)
         
-        # Function to safely download NLTK data
-        def safe_download(package_name, subdir='corpora'):
+        # Try to load NLTK data with retries for file locks
+        max_retries = 3
+        for attempt in range(max_retries):
             try:
-                nltk.data.find(f'{subdir}/{package_name}')
-            except (LookupError, BadZipFile, Exception) as e:
-                # Delete corrupted data if exists
-                corrupted_path = os.path.join(nltk_data_dir, subdir, package_name)
-                if os.path.exists(corrupted_path):
-                    shutil.rmtree(corrupted_path, ignore_errors=True)
-                # Also delete zip file if exists
-                zip_path = os.path.join(nltk_data_dir, subdir, f'{package_name}.zip')
-                if os.path.exists(zip_path):
-                    os.remove(zip_path)
-                # Re-download
-                nltk.download(package_name, download_dir=nltk_data_dir, quiet=True)
-        
-        safe_download('stopwords')
-        safe_download('wordnet')
-        
-        stop_words = set(stopwords.words('english'))
-        lemmatizer = WordNetLemmatizer()
-        ps = PorterStemmer()
+                # Check if data exists, download only if missing
+                try:
+                    nltk.data.find('corpora/stopwords')
+                except LookupError:
+                    nltk.download('stopwords', download_dir=nltk_data_dir, quiet=True)
+                
+                try:
+                    nltk.data.find('corpora/wordnet')
+                except LookupError:
+                    nltk.download('wordnet', download_dir=nltk_data_dir, quiet=True)
+                
+                # Successfully loaded, initialize
+                stop_words = set(stopwords.words('english'))
+                lemmatizer = WordNetLemmatizer()
+                ps = PorterStemmer()
+                break  # Success, exit retry loop
+                
+            except PermissionError as e:
+                # File locked by another process (WinError 32) - wait and retry
+                if attempt < max_retries - 1:
+                    time.sleep(1)
+                else:
+                    # Last attempt - use fallback stopwords
+                    stop_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'be', 'been',
+                                  'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will',
+                                  'would', 'could', 'should', 'may', 'might', 'must', 'shall',
+                                  'can', 'need', 'dare', 'ought', 'used', 'to', 'of', 'in',
+                                  'for', 'on', 'with', 'at', 'by', 'from', 'as', 'into',
+                                  'through', 'during', 'before', 'after', 'above', 'below',
+                                  'between', 'under', 'again', 'further', 'then', 'once',
+                                  'and', 'but', 'or', 'nor', 'so', 'yet', 'both', 'either',
+                                  'neither', 'not', 'only', 'own', 'same', 'than', 'too',
+                                  'very', 'just', 'also', 'now', 'here', 'there', 'when',
+                                  'where', 'why', 'how', 'all', 'each', 'few', 'more', 'most',
+                                  'other', 'some', 'such', 'no', 'any', 'this', 'that', 'these',
+                                  'those', 'i', 'me', 'my', 'myself', 'we', 'our', 'ours',
+                                  'ourselves', 'you', 'your', 'yours', 'yourself', 'yourselves',
+                                  'he', 'him', 'his', 'himself', 'she', 'her', 'hers', 'herself',
+                                  'it', 'its', 'itself', 'they', 'them', 'their', 'theirs',
+                                  'themselves', 'what', 'which', 'who', 'whom'}
+                    lemmatizer = None
+                    ps = PorterStemmer()
+            except Exception as e:
+                # Other errors - use fallback
+                stop_words = {'the', 'a', 'an', 'is', 'are', 'was', 'were', 'in', 'on', 'at',
+                              'to', 'for', 'of', 'and', 'or', 'but', 'not', 'with', 'as', 'by'}
+                lemmatizer = None
+                ps = PorterStemmer()
+                break
+    
     return stop_words, lemmatizer, ps
 
 
@@ -162,11 +193,12 @@ def cleanText(doc):
     tokens = [w for w in tokens if not w in stop_words]#remove stop words
     tokens = [word for word in tokens if len(word) > 1]
     tokens = [ps.stem(token) for token in tokens] #apply stemming
-    # Apply lemmatization with error handling
-    try:
-        tokens = [lemmatizer.lemmatize(token) for token in tokens]
-    except:
-        pass  # Skip lemmatization if WordNet fails
+    # Apply lemmatization with error handling (lemmatizer may be None if fallback was used)
+    if lemmatizer is not None:
+        try:
+            tokens = [lemmatizer.lemmatize(token) for token in tokens]
+        except:
+            pass  # Skip lemmatization if WordNet fails
     tokens = ' '.join(tokens)
     return tokens
 
