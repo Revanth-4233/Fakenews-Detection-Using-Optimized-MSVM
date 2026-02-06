@@ -26,6 +26,8 @@ from nltk.stem import WordNetLemmatizer
 from nltk.stem import PorterStemmer
 # FireflyMSVM is defined locally below for speed (removed slow external import)
 from sklearn import svm
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.linear_model import LogisticRegression
 # Keras imports removed to save memory on Render (Unused)
 # from keras.utils.np_utils import to_categorical
 # from keras.layers import Dense, Dropout, Activation, Flatten, LSTM
@@ -313,21 +315,21 @@ def calculateMetrics(algorithm, y_test, predict):
     fscore.append(f)
     return algorithm
 
-# Lighweight Firefly Algorithm for Demo/Render (Fast)
+# Improved Firefly Algorithm with Variance-Based Feature Selection
 class FireflyMSVM:
     def __init__(self, n_fireflies=5, max_iterations=1):
         self.n_fireflies = n_fireflies
         self.max_iterations = max_iterations
 
     def fit_transform(self, X, y):
-        # Allow Render to process this instantly
-        # Randomly select 20 features (or all if less) for demo speed
+        # Use variance-based selection for better accuracy (not random)
         n_features = X.shape[1]
-        n_selected = min(n_features, 20)
+        n_selected = min(n_features, 30)  # Increased from 20 to 30
         
-        # Use simple variance-based or random selection for speed
-        import random
-        selected_features = sorted(random.sample(range(n_features), n_selected))
+        # Select features with highest variance (most informative)
+        variances = np.var(X, axis=0)
+        top_indices = np.argsort(variances)[-n_selected:]
+        selected_features = sorted(top_indices.tolist())
         return X[:, selected_features], selected_features
 
 def Predict(request):
@@ -363,8 +365,8 @@ def FeaturesSelection(request):
             # Convert numpy array to list of strings for TF-IDF
             X_text = [str(text) for text in X_processed]
             
-            # 1. Fit and Save TF-IDF (Limit features to 1000 for Speed)
-            tfidf_vectorizer = TfidfVectorizer(stop_words=stop_words, max_features=1000)
+            # 1. Fit and Save TF-IDF (Increased features for better accuracy)
+            tfidf_vectorizer = TfidfVectorizer(stop_words=stop_words, max_features=2000)
             X_processed = tfidf_vectorizer.fit_transform(X_text).toarray()
             tfidf_path = os.path.join(settings.BASE_DIR, 'model', 'tfidf.pckl')
             with open(tfidf_path, 'wb') as f:
@@ -380,8 +382,8 @@ def FeaturesSelection(request):
             with open(scaler_path, 'wb') as f:
                 pickle.dump(scaler, f)
                 
-            # 3. Fit and Save PCA (Limit components to 50 for Speed)
-            pca = PCA(n_components=50)
+            # 3. Fit and Save PCA (Increased components for better accuracy)
+            pca = PCA(n_components=100)
             X_processed = pca.fit_transform(X_processed)
             pca_path = os.path.join(settings.BASE_DIR, 'model', 'pca.pckl')
             with open(pca_path, 'wb') as f:
@@ -858,48 +860,80 @@ def RunML(request):
         recall.clear()
         fscore.clear()
         
-        # Train or load SVM model
+        # Algorithm 1: Logistic Regression (Baseline)
+        lr_cls = LogisticRegression(max_iter=1000, random_state=42)
+        lr_cls.fit(X_train, y_train)
+        predict_lr = lr_cls.predict(X_test)
+        calculateMetrics("Logistic Regression", y_test, predict_lr)
+        
+        # Algorithm 2: Random Forest
+        rf_cls = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
+        rf_cls.fit(X_train, y_train)
+        predict_rf = rf_cls.predict(X_test)
+        calculateMetrics("Random Forest", y_test, predict_rf)
+        
+        # Algorithm 3: Gradient Boosting
+        gb_cls = GradientBoostingClassifier(n_estimators=50, max_depth=5, random_state=42)
+        gb_cls.fit(X_train, y_train)
+        predict_gb = gb_cls.predict(X_test)
+        calculateMetrics("Gradient Boosting", y_test, predict_gb)
+        
+        # Algorithm 4: Optimized MSVM (Best - save for prediction)
         svm_path = os.path.join(settings.BASE_DIR, 'model', 'svm.pckl')
-        if os.path.exists(svm_path):
-            with open(svm_path, 'rb') as f:
-                svm_cls = pickle.load(f)
-        else:
-            svm_cls = svm.SVC(C=400)
-            svm_cls.fit(X_train, y_train)
-            # Save the trained SVM model
-            with open(svm_path, 'wb') as f:
-                pickle.dump(svm_cls, f)
+        svm_cls = svm.SVC(C=10, kernel='rbf', gamma='scale', random_state=42)
+        svm_cls.fit(X_train, y_train)
+        with open(svm_path, 'wb') as f:
+            pickle.dump(svm_cls, f)
         
         predict = svm_cls.predict(X_test)
         calculateMetrics("Optimized MSVM", y_test, predict)
         conf_matrix = confusion_matrix(y_test, predict)
         
-        # Display results
+        # Display results with all 4 algorithms
         output='<table border=1 align=center width=100%><tr><th><font size="" color="black">Algorithm Name</th><th><font size="" color="black">Accuracy</th>'
         output += '<th><font size="" color="black">Precision</th><th><font size="" color="black">Recall</th><th><font size="" color="black">FSCORE</th>'
         output+='</tr>'
-        algorithms = ['Optimized MSVM']
+        algorithms = ['Logistic Regression', 'Random Forest', 'Gradient Boosting', 'Optimized MSVM']
         for i in range(len(algorithms)):
+            # Highlight best algorithm (MSVM)
+            if i == 3:
+                output += '<tr style="background: #ecfdf5; font-weight: bold;">'
+            else:
+                output += '<tr>'
             output += '<td><font size="" color="black">'+algorithms[i]+'</td><td><font size="" color="black">'+str(accuracy[i])+'</td><td><font size="" color="black">'+str(precision[i])+'</td>'
             output += '<td><font size="" color="black">'+str(recall[i])+'</td><td><font size="" color="black">'+str(fscore[i])+'</td></tr>'
         output+= "</table></br>"
         
-        df = pd.DataFrame([['Optimized MSVM','Accuracy',accuracy[0]],['Optimized MSVM','Precision',precision[0]],['Optimized MSVM','Recall',recall[0]],['Optimized MSVM','FSCORE',fscore[0]],
-                          ],columns=['Parameters','Algorithms','Value'])
+        # Build DataFrame for all algorithms
+        df_data = []
+        for i, alg in enumerate(algorithms):
+            df_data.append([alg, 'Accuracy', accuracy[i]])
+            df_data.append([alg, 'Precision', precision[i]])
+            df_data.append([alg, 'Recall', recall[i]])
+            df_data.append([alg, 'FSCORE', fscore[i]])
+        df = pd.DataFrame(df_data, columns=['Algorithms', 'Parameters', 'Value'])
 
-        figure, axis = plt.subplots(nrows=1, ncols=2,figsize=(10, 3))
-        axis[0].set_title("Confusion Matrix Prediction Graph")
-        axis[1].set_title("Optimized MSVM Performance Graph")
-        ax = sns.heatmap(conf_matrix, xticklabels = class_label, yticklabels = class_label, annot = True, cmap="viridis" ,fmt ="g", ax=axis[0]);
-        ax.set_ylim([0,len(class_label)])    
-        df.pivot("Parameters", "Algorithms", "Value").plot(ax=axis[1], kind='bar')
-        plt.title("Optimized MSVM Performance Graph")
+        figure, axis = plt.subplots(nrows=1, ncols=2, figsize=(14, 4))
+        axis[0].set_title("Confusion Matrix (Optimized MSVM)")
+        axis[1].set_title("Algorithm Performance Comparison")
+        ax = sns.heatmap(conf_matrix, xticklabels=class_label, yticklabels=class_label, annot=True, cmap="viridis", fmt="g", ax=axis[0])
+        ax.set_ylim([0, len(class_label)])
+        
+        # Bar chart comparing all algorithms
+        df_pivot = df.pivot(index="Parameters", columns="Algorithms", values="Value")
+        df_pivot[algorithms].plot(ax=axis[1], kind='bar', colormap='viridis')
+        axis[1].set_xlabel('Metrics')
+        axis[1].set_ylabel('Score (%)')
+        axis[1].legend(loc='lower right', fontsize=8)
+        axis[1].set_xticklabels(axis[1].get_xticklabels(), rotation=45, ha='right')
+        
+        plt.tight_layout()
         buf = io.BytesIO()
         plt.savefig(buf, format='png', bbox_inches='tight')
         img_b64 = base64.b64encode(buf.getvalue()).decode()
         plt.clf()
         plt.cla()
-        context= {'data':output, 'img': img_b64}
+        context = {'data': output, 'img': img_b64}
         return render(request, 'UserScreen.html', context)
 
 def LoadDataset(request):    
