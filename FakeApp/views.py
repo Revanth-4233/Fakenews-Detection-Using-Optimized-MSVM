@@ -661,11 +661,11 @@ def PredictAction(request):
         # Get decision function scores for multi-class classification
         try:
             raw_decision_score = svm_cls.decision_function(data)[0]
-            # Apply bias correction - model tends to predict negative, so shift scores up
-            # This compensates for model's inherent bias towards "fake" predictions
-            decision_score = raw_decision_score + 1.0
+            # Apply stronger bias correction - model tends to predict negative
+            # Increased from 1.0 to 1.5 for more accurate real news classification
+            decision_score = raw_decision_score + 1.5
         except:
-            decision_score = -0.5 if predict == 0 else 0.5
+            decision_score = 0.5 if predict == 1 else -0.5
         
         # Define 5 multi-class categories based on decision score
         categories = [
@@ -710,8 +710,8 @@ def PredictAction(request):
                         sent_data = pca.transform(sent_data)
                         sent_data = sent_data[:, selected_features]
                         raw_sent_score = svm_cls.decision_function(sent_data)[0]
-                        # Apply same bias correction as main prediction
-                        sent_score = raw_sent_score + 1.0
+                        # Apply same stronger bias correction as main prediction
+                        sent_score = raw_sent_score + 1.5
                         
                         # Determine sentence status (more lenient thresholds)
                         if sent_score < -0.3:
