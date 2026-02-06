@@ -1,0 +1,83 @@
+# Example News for Testing Fake News Detection Model
+# These are example political statements for testing the 5-class classifier
+
+## =====================================================
+## FALSE / PANTS ON FIRE EXAMPLES (Misinformation)
+## =====================================================
+
+FAKE_1: "The government is secretly adding microchips to vaccines to track citizens' movements and control their behavior through 5G networks."
+
+FAKE_2: "Scientists discovered that the Earth is actually flat and NASA has been hiding the truth for decades."
+
+FAKE_3: "Drinking bleach or injecting disinfectant can cure COVID-19 according to medical experts."
+
+FAKE_4: "The 2020 election was stolen through millions of illegal votes from dead people and foreign interference."
+
+FAKE_5: "Climate change is a hoax invented by China to hurt American manufacturing."
+
+
+## =====================================================
+## TRUE / MOSTLY TRUE EXAMPLES (Verified Facts)
+## =====================================================
+
+TRUE_1: "NASA successfully launched the Artemis I mission, an uncrewed flight around the Moon, in November 2022."
+
+TRUE_2: "The unemployment rate in the United States fell to 3.4% in January 2023, the lowest level since 1969."
+
+TRUE_3: "President Biden signed the Inflation Reduction Act in August 2022, which includes provisions for climate change and healthcare."
+
+TRUE_4: "The World Health Organization declared COVID-19 a global pandemic on March 11, 2020."
+
+TRUE_5: "India became the fourth country to successfully land a spacecraft on the Moon with Chandrayaan-3 in August 2023."
+
+
+## =====================================================
+## HALF TRUE EXAMPLES (Partially Accurate)
+## =====================================================
+
+HALF_1: "The economy is the strongest it has ever been in American history."
+
+HALF_2: "Illegal immigration is at an all-time high at the southern border."
+
+HALF_3: "Tax cuts always pay for themselves through economic growth."
+
+HALF_4: "Social Security will run out of money in the next decade."
+
+HALF_5: "Electric vehicles are completely emissions-free and better for the environment."
+
+
+## =====================================================
+## COPY-PASTE READY EXAMPLES FOR TESTING
+## =====================================================
+
+# TEST 1 - Should predict FALSE/PANTS ON FIRE:
+The government is secretly adding microchips to vaccines to track citizens' movements and control their behavior through 5G networks.
+
+# TEST 2 - Should predict TRUE:
+NASA successfully launched the Artemis I mission, an uncrewed flight around the Moon, in November 2022.
+
+# TEST 3 - Should predict HALF TRUE:
+The economy is the strongest it has ever been in American history.
+
+# TEST 4 - Should predict FALSE:
+Scientists discovered that the Earth is actually flat and NASA has been hiding the truth for decades.
+
+# TEST 5 - Should predict MOSTLY TRUE:
+The World Health Organization declared COVID-19 a global pandemic on March 11, 2020.
+
+
+## =====================================================
+## TRENDING POLITICAL NEWS EXAMPLES (2024-2025)
+## =====================================================
+
+# Copy these to test current political claims:
+
+TREND_1: "The Supreme Court ruled that presidents have absolute immunity from criminal prosecution for official acts."
+
+TREND_2: "Inflation in the US has dropped to 2.9% in 2024, down from over 9% in 2022."
+
+TREND_3: "Electric vehicle sales have surpassed gasoline cars in Europe for the first time."
+
+TREND_4: "AI companies are replacing millions of jobs and unemployment will reach 50% by 2025."
+
+TREND_5: "India's GDP growth rate exceeded 7% making it one of the fastest growing major economies."
