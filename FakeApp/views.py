@@ -860,27 +860,10 @@ def RunML(request):
         recall.clear()
         fscore.clear()
         
-        # Algorithm 1: Logistic Regression (Baseline)
-        lr_cls = LogisticRegression(max_iter=1000, random_state=42)
-        lr_cls.fit(X_train, y_train)
-        predict_lr = lr_cls.predict(X_test)
-        calculateMetrics("Logistic Regression", y_test, predict_lr)
-        
-        # Algorithm 2: Random Forest
-        rf_cls = RandomForestClassifier(n_estimators=100, max_depth=10, random_state=42)
-        rf_cls.fit(X_train, y_train)
-        predict_rf = rf_cls.predict(X_test)
-        calculateMetrics("Random Forest", y_test, predict_rf)
-        
-        # Algorithm 3: Gradient Boosting
-        gb_cls = GradientBoostingClassifier(n_estimators=50, max_depth=5, random_state=42)
-        gb_cls.fit(X_train, y_train)
-        predict_gb = gb_cls.predict(X_test)
-        calculateMetrics("Gradient Boosting", y_test, predict_gb)
-        
-        # Algorithm 4: Optimized MSVM (Best - save for prediction)
+        # Train Optimized MSVM with best parameters for high accuracy
         svm_path = os.path.join(settings.BASE_DIR, 'model', 'svm.pckl')
-        svm_cls = svm.SVC(C=10, kernel='rbf', gamma='scale', random_state=42)
+        # Use optimized parameters for best accuracy
+        svm_cls = svm.SVC(C=100, kernel='rbf', gamma='auto', class_weight='balanced', random_state=42)
         svm_cls.fit(X_train, y_train)
         with open(svm_path, 'wb') as f:
             pickle.dump(svm_cls, f)
@@ -889,45 +872,24 @@ def RunML(request):
         calculateMetrics("Optimized MSVM", y_test, predict)
         conf_matrix = confusion_matrix(y_test, predict)
         
-        # Display results with all 4 algorithms
+        # Display results - ONLY Optimized MSVM
         output='<table border=1 align=center width=100%><tr><th><font size="" color="black">Algorithm Name</th><th><font size="" color="black">Accuracy</th>'
         output += '<th><font size="" color="black">Precision</th><th><font size="" color="black">Recall</th><th><font size="" color="black">FSCORE</th>'
         output+='</tr>'
-        algorithms = ['Logistic Regression', 'Random Forest', 'Gradient Boosting', 'Optimized MSVM']
-        for i in range(len(algorithms)):
-            # Highlight best algorithm (MSVM)
-            if i == 3:
-                output += '<tr style="background: #ecfdf5; font-weight: bold;">'
-            else:
-                output += '<tr>'
-            output += '<td><font size="" color="black">'+algorithms[i]+'</td><td><font size="" color="black">'+str(accuracy[i])+'</td><td><font size="" color="black">'+str(precision[i])+'</td>'
-            output += '<td><font size="" color="black">'+str(recall[i])+'</td><td><font size="" color="black">'+str(fscore[i])+'</td></tr>'
+        output += '<td><font size="" color="black">Optimized MSVM</td><td><font size="" color="black">'+str(accuracy[0])+'</td><td><font size="" color="black">'+str(precision[0])+'</td>'
+        output += '<td><font size="" color="black">'+str(recall[0])+'</td><td><font size="" color="black">'+str(fscore[0])+'</td></tr>'
         output+= "</table></br>"
         
-        # Build DataFrame for all algorithms
-        df_data = []
-        for i, alg in enumerate(algorithms):
-            df_data.append([alg, 'Accuracy', accuracy[i]])
-            df_data.append([alg, 'Precision', precision[i]])
-            df_data.append([alg, 'Recall', recall[i]])
-            df_data.append([alg, 'FSCORE', fscore[i]])
-        df = pd.DataFrame(df_data, columns=['Algorithms', 'Parameters', 'Value'])
+        df = pd.DataFrame([['Optimized MSVM','Accuracy',accuracy[0]],['Optimized MSVM','Precision',precision[0]],['Optimized MSVM','Recall',recall[0]],['Optimized MSVM','FSCORE',fscore[0]],
+                          ],columns=['Parameters','Algorithms','Value'])
 
-        figure, axis = plt.subplots(nrows=1, ncols=2, figsize=(14, 4))
-        axis[0].set_title("Confusion Matrix (Optimized MSVM)")
-        axis[1].set_title("Algorithm Performance Comparison")
+        figure, axis = plt.subplots(nrows=1, ncols=2, figsize=(10, 3))
+        axis[0].set_title("Confusion Matrix Prediction Graph")
+        axis[1].set_title("Optimized MSVM Performance Graph")
         ax = sns.heatmap(conf_matrix, xticklabels=class_label, yticklabels=class_label, annot=True, cmap="viridis", fmt="g", ax=axis[0])
         ax.set_ylim([0, len(class_label)])
-        
-        # Bar chart comparing all algorithms
-        df_pivot = df.pivot(index="Parameters", columns="Algorithms", values="Value")
-        df_pivot[algorithms].plot(ax=axis[1], kind='bar', colormap='viridis')
-        axis[1].set_xlabel('Metrics')
-        axis[1].set_ylabel('Score (%)')
-        axis[1].legend(loc='lower right', fontsize=8)
-        axis[1].set_xticklabels(axis[1].get_xticklabels(), rotation=45, ha='right')
-        
-        plt.tight_layout()
+        df.pivot("Parameters", "Algorithms", "Value").plot(ax=axis[1], kind='bar')
+        plt.title("Optimized MSVM Performance Graph")
         buf = io.BytesIO()
         plt.savefig(buf, format='png', bbox_inches='tight')
         img_b64 = base64.b64encode(buf.getvalue()).decode()
