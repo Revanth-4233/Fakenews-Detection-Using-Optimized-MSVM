@@ -358,10 +358,18 @@ def FeaturesSelection(request):
             output += "Total features extracted using MPCA = "+str(X_processed.shape[1])+"<br/>"
             
             firefly_path = os.path.join(settings.BASE_DIR, 'model', 'firefly.npy')
+            regenerate_firefly = True
             if os.path.exists(firefly_path):
                 selected_features = np.load(firefly_path)
-                X_processed = X_processed[:, selected_features]
-            else:
+                # Validate dimensions match
+                if max(selected_features) < X_processed.shape[1]:
+                    X_processed = X_processed[:, selected_features]
+                    regenerate_firefly = False
+                else:
+                    # Dimension mismatch - delete old file and regenerate
+                    os.remove(firefly_path)
+            
+            if regenerate_firefly:
                 firefly_msvm = FireflyMSVM(n_fireflies=5, max_iterations=1)
                 X_processed, selected_features = firefly_msvm.fit_transform(X_processed, Y_processed)
                 np.save(os.path.join(settings.BASE_DIR, 'model', 'firefly'), selected_features)
@@ -611,7 +619,9 @@ def PredictAction(request):
         data = tfidf_vectorizer.transform([data]).toarray()
         data = scaler.transform(data)
         data = pca.transform(data)
-        data = data[:, selected_features]
+        # Safely apply selected features with dimension check
+        if selected_features is not None and max(selected_features) < data.shape[1]:
+            data = data[:, selected_features]
         predict = svm_cls.predict(data)[0]
         
         # Get decision function scores for multi-class classification
@@ -945,8 +955,7 @@ def UserLogin(request):
        return render(request, 'UserLogin.html', {})
 
 def index(request):
-    if request.method == 'GET':
-       return render(request, 'index.html', {})
+    return render(request, 'index.html', {})
 
 def Register(request):
     if request.method == 'GET':
