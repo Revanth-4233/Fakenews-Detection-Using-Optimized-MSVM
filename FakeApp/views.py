@@ -677,14 +677,14 @@ def PredictAction(request):
         ]
         
         # Determine category based on corrected decision score
-        # Thresholds adjusted for balanced predictions after bias correction
-        if decision_score < -0.5:
+        # Thresholds shifted to be more lenient for real news
+        if decision_score < -0.8:
             selected_cat = 0  # Pants on Fire
-        elif decision_score < 0.0:
+        elif decision_score < -0.3:
             selected_cat = 1  # False
-        elif decision_score < 0.5:
+        elif decision_score < 0.3:
             selected_cat = 2  # Half True
-        elif decision_score < 1.0:
+        elif decision_score < 0.8:
             selected_cat = 3  # Mostly True
         else:
             selected_cat = 4  # True
@@ -713,14 +713,14 @@ def PredictAction(request):
                         # Apply same bias correction as main prediction
                         sent_score = raw_sent_score + 1.0
                         
-                        # Determine sentence status (with bias correction applied)
-                        if sent_score < 0.0:
+                        # Determine sentence status (more lenient thresholds)
+                        if sent_score < -0.3:
                             status_icon = "🔴"
                             status_text = "Likely False"
                             bg_color = "#fef2f2"
                             border_color = "#fecaca"
                             text_color = "#dc2626"
-                        elif sent_score < 0.6:
+                        elif sent_score < 0.5:
                             status_icon = "🟡"
                             status_text = "Uncertain"
                             bg_color = "#fffbeb"
