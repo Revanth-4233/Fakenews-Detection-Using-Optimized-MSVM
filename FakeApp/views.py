@@ -675,13 +675,14 @@ def PredictAction(request):
         ]
         
         # Determine category based on decision score
-        if decision_score < -1.2:
+        # Adjusted thresholds for more balanced predictions
+        if decision_score < -0.8:
             selected_cat = 0  # Pants on Fire
-        elif decision_score < -0.4:
+        elif decision_score < -0.2:
             selected_cat = 1  # False
-        elif decision_score < 0.4:
+        elif decision_score < 0.2:
             selected_cat = 2  # Half True
-        elif decision_score < 1.2:
+        elif decision_score < 0.6:
             selected_cat = 3  # Mostly True
         else:
             selected_cat = 4  # True
@@ -708,14 +709,14 @@ def PredictAction(request):
                         sent_data = sent_data[:, selected_features]
                         sent_score = svm_cls.decision_function(sent_data)[0]
                         
-                        # Determine sentence status
-                        if sent_score < -0.5:
+                        # Determine sentence status (adjusted thresholds)
+                        if sent_score < -0.3:
                             status_icon = "🔴"
                             status_text = "Likely False"
                             bg_color = "#fef2f2"
                             border_color = "#fecaca"
                             text_color = "#dc2626"
-                        elif sent_score < 0.3:
+                        elif sent_score < 0.1:
                             status_icon = "🟡"
                             status_text = "Uncertain"
                             bg_color = "#fffbeb"
