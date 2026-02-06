@@ -658,16 +658,13 @@ def PredictAction(request):
             data = data[:, selected_features]
         predict = svm_cls.predict(data)[0]
         
-        # Get decision function scores for multi-class classification
+        # Get raw decision score (no bias correction)
         try:
-            raw_decision_score = svm_cls.decision_function(data)[0]
-            # Apply stronger bias correction - model tends to predict negative
-            # Increased from 1.0 to 1.5 for more accurate real news classification
-            decision_score = raw_decision_score + 1.5
+            decision_score = svm_cls.decision_function(data)[0]
         except:
-            decision_score = 0.5 if predict == 1 else -0.5
+            decision_score = -1.0 if predict == 0 else 1.0
         
-        # Define 5 multi-class categories based on decision score
+        # Define 5 multi-class categories
         categories = [
             {"name": "Pants on Fire", "icon": "🔥", "color": "#991b1b", "bg": "#fef2f2", "border": "#fecaca", "desc": "Completely False - Major misinformation detected"},
             {"name": "False", "icon": "❌", "color": "#dc2626", "bg": "#fef2f2", "border": "#fecaca", "desc": "False - Contains significant inaccuracies"},
@@ -676,18 +673,24 @@ def PredictAction(request):
             {"name": "True", "icon": "✅", "color": "#047857", "bg": "#f0fdf4", "border": "#bbf7d0", "desc": "True - Accurate and verified information"},
         ]
         
-        # Determine category based on corrected decision score
-        # Thresholds shifted to be more lenient for real news
-        if decision_score < -0.8:
-            selected_cat = 0  # Pants on Fire
-        elif decision_score < -0.3:
-            selected_cat = 1  # False
-        elif decision_score < 0.3:
-            selected_cat = 2  # Half True
-        elif decision_score < 0.8:
-            selected_cat = 3  # Mostly True
-        else:
-            selected_cat = 4  # True
+        # Use SVM's binary prediction as PRIMARY classifier
+        # Then use decision score magnitude for sub-categories
+        if predict == 0:  # SVM says FALSE
+            # Determine severity of falseness
+            if decision_score < -1.0:
+                selected_cat = 0  # Pants on Fire (strongly false)
+            elif decision_score < -0.3:
+                selected_cat = 1  # False
+            else:
+                selected_cat = 2  # Half True (borderline)
+        else:  # SVM says TRUE (predict == 1)
+            # Determine confidence of trueness
+            if decision_score > 1.0:
+                selected_cat = 4  # True (strongly true)
+            elif decision_score > 0.3:
+                selected_cat = 3  # Mostly True
+            else:
+                selected_cat = 2  # Half True (borderline)
         
         cat = categories[selected_cat]
         
@@ -710,11 +713,11 @@ def PredictAction(request):
                         sent_data = pca.transform(sent_data)
                         sent_data = sent_data[:, selected_features]
                         raw_sent_score = svm_cls.decision_function(sent_data)[0]
-                        # Apply same stronger bias correction as main prediction
-                        sent_score = raw_sent_score + 1.5
+                        # Use raw score without bias correction
+                        sent_score = raw_sent_score
                         
-                        # Determine sentence status (more lenient thresholds)
-                        if sent_score < -0.3:
+                        # Determine sentence status based on raw score
+                        if sent_score < -0.5:
                             status_icon = "🔴"
                             status_text = "Likely False"
                             bg_color = "#fef2f2"
